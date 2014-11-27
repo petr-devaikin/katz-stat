@@ -65,3 +65,7 @@ svg #level text {
     fill: #175A11;
     text-anchor: end;
 }
+
+svg #agePointer text {
+    fill: #175A11;
+}
