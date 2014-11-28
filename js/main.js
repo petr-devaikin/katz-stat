@@ -104,11 +104,11 @@ function drawLevel(dX) {
         .attr('y2', 0);
 
     levelText = levelContainer.append('text')
-        .attr('y', -4);
+        .attr('y', -6);
 
     levelAdditionalText = levelContainer.append('text')
         .classed('additional', true)
-        .attr('y', -20);
+        .attr('y', -21);
 
 
     levelContainer2.append('line')
@@ -119,11 +119,11 @@ function drawLevel(dX) {
         .attr('y2', 0);
 
     levelText2 = levelContainer2.append('text')
-        .attr('y', 12);
+        .attr('y', 14);
 
     levelAdditionalText2 = levelContainer2.append('text')
         .classed('additional', true)
-        .attr('y', 27);
+        .attr('y', 28);
 }
 
 function drawAgePointer() {
@@ -187,7 +187,7 @@ function setLevel(d) {
         levelContainer2
             .attr('opacity', 1)
             .attr('transform', 'translate(0,' + y2 + ')');
-        levelText2.text(value2.formatMoney(0, ',', ' ') + 'a');
+        levelText2.text('Всего: ' + value2.formatMoney(0, ',', ' ') + 'a');
         levelAdditionalText2.text('Платежей: ' + count2 + ', средний: ' +
             averageValue2.formatMoney(0, ',', ' ') + 'a');
     }
@@ -198,7 +198,7 @@ function setLevel(d) {
     levelContainer
         .attr('opacity', 1)
         .attr('transform', 'translate(0,' + y + ')');
-    levelText.text(value.formatMoney(0, ',', ' ') + 'a');
+    levelText.text('Всего: ' + value.formatMoney(0, ',', ' ') + 'a');
     levelAdditionalText.text('Платежей: ' + count + ', средний: ' +
         averageValue.formatMoney(0, ',', ' ') + 'a');
 
