@@ -6,6 +6,8 @@ var container,
     levelContainer2,
     levelText,
     levelText2,
+    levelAdditionalText,
+    levelAdditionalText2,
     ageContainer,
     agePointer,
     horizontalAxises,
@@ -27,8 +29,8 @@ function onResize() {
     var svg = document.getElementById('svgContainer')
     width = svg.offsetWidth;
     height = svg.offsetHeight;
-    if (height / 2 < maxColumnHeight + 20)
-        height = 2 * (maxColumnHeight + 20);
+    if (height / 2 < maxColumnHeight + 50)
+        height = 2 * (maxColumnHeight + 50);
 
     var dX = (width - (maxAge - minAge) * columnWidth) / 2;
 
@@ -50,6 +52,8 @@ function onResize() {
 
     levelText.attr('x', dX - 2 * columnWidth);
     levelText2.attr('x', dX - 2 * columnWidth);
+    levelAdditionalText.attr('x', dX - 2 * columnWidth);
+    levelAdditionalText2.attr('x', dX - 2 * columnWidth);
 }
 
 function draw() {
@@ -61,7 +65,7 @@ function draw() {
     levelContainer2 = axisesContainer.select('#level2');
     ageContainer = axisesContainer.select('#agePointer');
 
-    maxMoney = Math.max.apply(null, genderData.map(function(d) { return d.all }));
+    maxMoney = Math.max.apply(null, genderData.map(function(d) { return d.sum }));
     minAge = Math.min.apply(null, genderData.map(function(d) { return d.age }));
     maxAge = Math.max.apply(null, genderData.map(function(d) { return d.age }));
 
@@ -102,6 +106,10 @@ function drawLevel(dX) {
     levelText = levelContainer.append('text')
         .attr('y', -4);
 
+    levelAdditionalText = levelContainer.append('text')
+        .classed('additional', true)
+        .attr('y', -20);
+
 
     levelContainer2.append('line')
         .attr('opacity', 0)
@@ -111,7 +119,11 @@ function drawLevel(dX) {
         .attr('y2', 0);
 
     levelText2 = levelContainer2.append('text')
-        .attr('y', 14);
+        .attr('y', 12);
+
+    levelAdditionalText2 = levelContainer2.append('text')
+        .classed('additional', true)
+        .attr('y', 27);
 }
 
 function drawAgePointer() {
@@ -156,20 +168,28 @@ function showGender() {
 }
 
 function setLevel(d) {
-    var y = d.all ? -d.all / maxMoney * maxColumnHeight - 2: 0;
-    var value = d.all;
+    var y = d.sum ? -d.sum / maxMoney * maxColumnHeight - 2: 0;
+    var value = d.sum;
+    var averageValue = d.sum / d.count;
+    var count = d.count;
 
     if (!showAllMode) {
-        y = d.male ? -d.male / maxMoney * maxColumnHeight - 2: 0;
-        value = d.male;
+        y = d.male.sum ? -d.male.sum / maxMoney * maxColumnHeight - 2: 0;
+        value = d.male.sum;
+        averageValue = d.male.sum / d.male.count;
+        count = d.male.count;
 
-        var y2 = d.female ? d.female / maxMoney * maxColumnHeight + 2: 0;
-        var value2 = d.female;
+        var y2 = d.female.sum ? d.female.sum / maxMoney * maxColumnHeight + 2: 0;
+        var value2 = d.female.sum;
+        var averageValue2 = d.female.sum / d.female.count;
+        var count2 = d.female.count;
 
         levelContainer2
             .attr('opacity', 1)
             .attr('transform', 'translate(0,' + y2 + ')');
         levelText2.text(value2.formatMoney(0, ',', ' ') + 'a');
+        levelAdditionalText2.text('Платежей: ' + count2 + ', средний: ' +
+            averageValue2.formatMoney(0, ',', ' ') + 'a');
     }
     else
         levelContainer2
@@ -179,6 +199,8 @@ function setLevel(d) {
         .attr('opacity', 1)
         .attr('transform', 'translate(0,' + y + ')');
     levelText.text(value.formatMoney(0, ',', ' ') + 'a');
+    levelAdditionalText.text('Платежей: ' + count + ', средний: ' +
+        averageValue.formatMoney(0, ',', ' ') + 'a');
 
     agePointer
         .attr('opacity', 1)
@@ -208,29 +230,56 @@ function drawData() {
         .classed({ background: true })
         .attr('width', columnWidth);
 
-    allColumns = columns.append('rect')
+    allColumns = columns.append('g')
+        .classed('numberContainer', true);
+    allColumns.append('rect')
         .classed({ number: true, allNumber: true })
         .attr('width', columnWidth)
         .attr('height', function(d) {
-            return d.all ? d.all / maxMoney * maxColumnHeight + 2 : 0;
+            return d.sum ? d.sum / maxMoney * maxColumnHeight + 2 : 0;
         })
-        .attr('y', function(d) { return -d.all / maxMoney * maxColumnHeight - 2; });
+        .attr('y', function(d) { return -d.sum / maxMoney * maxColumnHeight - 2; });
+    allColumns.append('rect')
+        .classed({ averageNumber: true })
+        .attr('width', columnWidth)
+        .attr('height', function(d) {
+            return d.sum ? d.sum / d.count / maxMoney * maxColumnHeight + 2 : 0;
+        })
+        .attr('y', function(d) { return d.sum ?  -d.sum / d.count / maxMoney * maxColumnHeight - 2 : 0; });
 
-    maleColumns = columns.append('rect')
+    maleColumns = columns.append('g')
+        .classed('numberContainer', true)
+        .attr('opacity', 0);
+    maleColumns.append('rect')
         .classed({ number: true, maleNumber: true })
-        .attr('opacity', 0)
         .attr('width', columnWidth)
         .attr('height', function(d) {
-            return d.male ? d.male / maxMoney * maxColumnHeight + 2 : 0;
+            return d.male.sum ? d.male.sum / maxMoney * maxColumnHeight + 2 : 0;
         })
-        .attr('y', function(d) { return -d.male / maxMoney * maxColumnHeight - 2; });
-
-    femaleColumns = columns.append('rect')
-        .classed({ number: true, femaleNumber: true })
-        .attr('opacity', 0)
+        .attr('y', function(d) { return -d.male.sum / maxMoney * maxColumnHeight - 2; });
+    maleColumns.append('rect')
+        .classed({ averageNumber: true })
         .attr('width', columnWidth)
         .attr('height', function(d) {
-            return d.female ? d.female / maxMoney * maxColumnHeight + 2 : 0;
+            return d.male.sum ? d.male.sum / d.male.count / maxMoney * maxColumnHeight + 2 : 0;
+        })
+        .attr('y', function(d) { return d.male.sum ? -d.male.sum / d.male.count / maxMoney * maxColumnHeight - 2 : 0; });
+
+    femaleColumns = columns.append('g')
+        .classed('numberContainer', true)
+        .attr('opacity', 0);
+    femaleColumns.append('rect')
+        .classed({ number: true, femaleNumber: true })
+        .attr('width', columnWidth)
+        .attr('height', function(d) {
+            return d.female.sum ? d.female.sum / maxMoney * maxColumnHeight + 2 : 0;
+        })
+        .attr('y', 0);
+    femaleColumns.append('rect')
+        .classed({ averageNumber: true })
+        .attr('width', columnWidth)
+        .attr('height', function(d) {
+            return d.female.sum ? d.female.sum / d.female.count / maxMoney * maxColumnHeight + 2 : 0;
         })
         .attr('y', 0);
 }
