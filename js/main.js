@@ -1,8 +1,7 @@
-var width,
-    height,
-    container,
+var container,
     dataContainer,
     axisesContainer,
+    mainAxis,
     levelContainer,
     levelContainer2,
     levelText,
@@ -21,8 +20,37 @@ var columnWidth = 10,
     maxAge,
     maxMoney;
 
-window.onload = draw;
-//window.onresize = draw
+//window.onload = draw;
+window.onresize = onResize;
+
+function onResize() {
+    var svg = document.getElementById('svgContainer')
+    width = svg.offsetWidth;
+    height = svg.offsetHeight;
+    if (height / 2 < maxColumnHeight + 20)
+        height = 2 * (maxColumnHeight + 20);
+
+    var dX = (width - (maxAge - minAge) * columnWidth) / 2;
+
+    container.attr('transform', 'translate(0,' + (height / 2) + ')');
+    dataContainer.attr('transform', 'translate(' + dX + ',0)');
+    ageContainer.attr('transform', 'translate(' + dX + ',0)');
+    horizontalAxises.attr('transform', 'translate(' + dX + ',0)');
+
+    mainAxis.attr('x2', width - 30);
+    axisesContainer.select('polygon')
+        .attr('points', (width - 30) + ',0 ' + (width - 37) + ',7 ' + (width - 37) + ',0');
+
+    levelContainer.select('line').attr('x2', width);
+    levelContainer2.select('line').attr('x2', width);
+
+    dataContainer.selectAll('.background')
+        .attr('y', -height/2)
+        .attr('height', height);
+
+    levelText.attr('x', dX - 2 * columnWidth);
+    levelText2.attr('x', dX - 2 * columnWidth);
+}
 
 function draw() {
     container = d3.select('#graph #container');
@@ -33,33 +61,20 @@ function draw() {
     levelContainer2 = axisesContainer.select('#level2');
     ageContainer = axisesContainer.select('#agePointer');
 
-    dataContainer.text('');
-
-    var svg = document.getElementById('graph')
-    width = svg.offsetWidth;
-    height = svg.offsetHeight;
-
-    if (height / 2 < maxColumnHeight + 20)
-        height = 2 * (maxColumnHeight + 20);
-
     maxMoney = Math.max.apply(null, genderData.map(function(d) { return d.all }));
     minAge = Math.min.apply(null, genderData.map(function(d) { return d.age }));
     maxAge = Math.max.apply(null, genderData.map(function(d) { return d.age }));
 
-    var dX = (width - (maxAge - minAge) * columnWidth) / 2;
 
     drawAxis();
-    drawLevel(dX);
+    drawLevel();
     drawAgePointer();
     drawData();
 
-    container.attr('transform', 'translate(0,' + (height / 2) + ')');
-    dataContainer.attr('transform', 'translate(' + dX + ',0)');
-    ageContainer.attr('transform', 'translate(' + dX + ',0)');
-    horizontalAxises.attr('transform', 'translate(' + dX + ',0)');
-
     d3.select('#allButton').on('click', showAll);
     d3.select('#genderButton').on('click', showGender);
+
+    onResize();
 }
 
 function drawVerticalAxis(age) {
@@ -82,12 +97,10 @@ function drawLevel(dX) {
         .classed('level', true)
         .attr('x1', 0)
         .attr('y1', 0)
-        .attr('x2', width)
         .attr('y2', 0);
 
     levelText = levelContainer.append('text')
-        .attr('y', -4)
-        .attr('x', dX - 2 * columnWidth);
+        .attr('y', -4);
 
 
     levelContainer2.append('line')
@@ -95,12 +108,10 @@ function drawLevel(dX) {
         .classed('level', true)
         .attr('x1', 0)
         .attr('y1', 0)
-        .attr('x2', width)
         .attr('y2', 0);
 
     levelText2 = levelContainer2.append('text')
-        .attr('y', 14)
-        .attr('x', dX - 2 * columnWidth);
+        .attr('y', 14);
 }
 
 function drawAgePointer() {
@@ -111,16 +122,14 @@ function drawAgePointer() {
 }
 
 function drawAxis() {
-    axisesContainer.append('line')
+    mainAxis = axisesContainer.append('line')
         .classed('axis', true)
         .attr('x1', 0)
         .attr('y1', 0)
-        .attr('x2', width - 30)
         .attr('y2', 0);
 
     axisesContainer.append('polygon')
-        .classed('axis', true)
-        .attr('points', (width - 30) + ',0 ' + (width - 37) + ',7 ' + (width - 37) + ',0');
+        .classed('axis', true);
 
     drawVerticalAxis(minAge);
     drawVerticalAxis(maxAge);
@@ -184,8 +193,7 @@ function drawData() {
             .classed({ column: true })
             .attr('transform', function(d) {
                 var x = (d.age - minAge) * columnWidth;
-                var y = -height / 2;
-                return 'translate(' + x + ',' + y + ')';
+                return 'translate(' + x + ',0)';
             })
             .on('mouseover', setLevel)
             .on('mouseclick', setLevel)
@@ -198,9 +206,7 @@ function drawData() {
 
     columns.append('rect')
         .classed({ background: true })
-        .attr('width', columnWidth)
-        .attr('height', height)
-        .attr('y', 0);
+        .attr('width', columnWidth);
 
     allColumns = columns.append('rect')
         .classed({ number: true, allNumber: true })
@@ -208,7 +214,7 @@ function drawData() {
         .attr('height', function(d) {
             return d.all ? d.all / maxMoney * maxColumnHeight + 2 : 0;
         })
-        .attr('y', function(d) { return height / 2 - d.all / maxMoney * maxColumnHeight - 2; });
+        .attr('y', function(d) { return -d.all / maxMoney * maxColumnHeight - 2; });
 
     maleColumns = columns.append('rect')
         .classed({ number: true, maleNumber: true })
@@ -217,7 +223,7 @@ function drawData() {
         .attr('height', function(d) {
             return d.male ? d.male / maxMoney * maxColumnHeight + 2 : 0;
         })
-        .attr('y', function(d) { return height / 2 - d.male / maxMoney * maxColumnHeight - 2; });
+        .attr('y', function(d) { return -d.male / maxMoney * maxColumnHeight - 2; });
 
     femaleColumns = columns.append('rect')
         .classed({ number: true, femaleNumber: true })
@@ -226,7 +232,7 @@ function drawData() {
         .attr('height', function(d) {
             return d.female ? d.female / maxMoney * maxColumnHeight + 2 : 0;
         })
-        .attr('y', height / 2);
+        .attr('y', 0);
 }
 
 Number.prototype.formatMoney = function(c, d, t){
